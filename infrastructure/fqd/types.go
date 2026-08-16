@@ -5,10 +5,6 @@ import (
 	"strconv"
 )
 
-// This file holds FQD's exact JSON response shapes. Nothing outside this
-// package should ever reference these types directly — client.go maps them
-// into domain types at the port boundary.
-
 type AthleteAPIResponse struct {
 	AthleteId int    `json:"athleteId"`
 	LastName  string `json:"last"`
@@ -63,33 +59,9 @@ func (ff *FlexibleFloat64) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-type RankingsAPIResponse struct {
-	Gender         string          `json:"gender"`
-	Name           string          `json:"name"`
-	BodyWeight     float64         `json:"bw"`
-	Type           string          `json:"type"`
-	Division       string          `json:"division"`
-	AgeCategory    string          `json:"ac"`
-	WeightClass    string          `json:"wc"`
-	FirstSquat     FlexibleFloat64 `json:"s1"`
-	SecondSquat    FlexibleFloat64 `json:"s2"`
-	ThirdSquat     FlexibleFloat64 `json:"s3"`
-	BestSquat      FlexibleFloat64 `json:"squat"`
-	FirstBench     FlexibleFloat64 `json:"b1"`
-	SecondBench    FlexibleFloat64 `json:"b2"`
-	ThirdBench     FlexibleFloat64 `json:"b3"`
-	BestBench      FlexibleFloat64 `json:"bench"`
-	FirstDeadlift  FlexibleFloat64 `json:"d1"`
-	SecondDeadlift FlexibleFloat64 `json:"d2"`
-	ThirdDeadlift  FlexibleFloat64 `json:"d3"`
-	BestDeadlift   FlexibleFloat64 `json:"deadlift"`
-	Total          FlexibleFloat64 `json:"total"`
-	Gl             FlexibleFloat64 `json:"gl"`
-	MeetId         int             `json:"meetId"`
-	AthleteId      int             `json:"athleteId"`
-	IsNovice       bool            `json:"isNovice"`
-}
-
+// ResultAPIResponse is FQD's raw result shape. It's returned by both the
+// athlete-results and rankings endpoints — the two are identical on the
+// wire, so there's only one struct for them.
 type ResultAPIResponse struct {
 	Gender         string          `json:"gender"`
 	Name           string          `json:"name"`
@@ -114,4 +86,5 @@ type ResultAPIResponse struct {
 	Gl             FlexibleFloat64 `json:"gl"`
 	MeetId         int             `json:"meetId"`
 	AthleteId      int             `json:"athleteId"`
+	IsNovice       bool            `json:"isNovice"`
 }

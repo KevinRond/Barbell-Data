@@ -20,7 +20,7 @@ func NewSyncService(repo result.Repository, fetcher ResultsFetcher) *SyncService
 }
 
 func (s *SyncService) SyncDaily(ctx context.Context) error {
-	results, err := s.fetcher.FetchLatest(ctx)
+	results, err := s.fetcher.FetchLatestRankings(ctx)
 	if err != nil {
 		return fmt.Errorf("fetching latest results: %w", err)
 	}

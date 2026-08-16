@@ -1,10 +1,10 @@
 package main
 
 import (
-	"context"
 	"fmt"
 
 	"go-stats/infrastructure/fqd"
+	"go-stats/interfaces/cli"
 )
 
 // TODO: once infrastructure/sqlite exists, wire up:
@@ -17,7 +17,9 @@ import (
 func main() {
 	client := fqd.NewClient(fqd.NewApi("https://sheltered-inlet-15640.herokuapp.com/api"))
 
-	results, err := client.FetchLatest(context.Background())
+	fetchHandler := cli.NewFetchHandler(client)
+
+	results, err := fetchHandler.HandleFetchAthleteResults(152)
 	if err != nil {
 		fmt.Println("Error:", err)
 		return

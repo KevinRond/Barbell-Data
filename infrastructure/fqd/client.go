@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 
+	"go-stats/application/sync"
 	"go-stats/domain/result"
 )
 
@@ -77,7 +78,7 @@ func (c *Client) GetAthleteResults(ctx context.Context, athleteId int) ([]Result
 	return fetchJSON[[]ResultAPIResponse](ctx, c, endpoint)
 }
 
-func (c *Client) GetRankings(ctx context.Context, req RankingsRequest) ([]RankingsAPIResponse, error) {
+func (c *Client) GetRankings(ctx context.Context, req RankingsRequest) ([]ResultAPIResponse, error) {
 	var liftingType string
 	if req.BenchOnly {
 		liftingType = "bp"
@@ -101,7 +102,7 @@ func (c *Client) GetRankings(ctx context.Context, req RankingsRequest) ([]Rankin
 	params.Add("wc", req.WeightClass) // Safely escapes the "-" character
 
 	endpoint := c.api.rankingsEndpoint + "?" + params.Encode()
-	return fetchJSON[[]RankingsAPIResponse](ctx, c, endpoint)
+	return fetchJSON[[]ResultAPIResponse](ctx, c, endpoint)
 }
 
 // defaultLatestQuery is a placeholder for what "latest results" means until
@@ -117,8 +118,7 @@ var defaultLatestQuery = RankingsRequest{
 	WeightClass: "-83kg",
 }
 
-// FetchLatest implements application/sync.ResultsFetcher.
-func (c *Client) FetchLatest(ctx context.Context) ([]result.Result, error) {
+func (c *Client) FetchLatestRankings(ctx context.Context) ([]result.Result, error) {
 	rankings, err := c.GetRankings(ctx, defaultLatestQuery)
 	if err != nil {
 		return nil, err
@@ -132,7 +132,38 @@ func (c *Client) FetchLatest(ctx context.Context) ([]result.Result, error) {
 	return results, nil
 }
 
-func mapToResult(r RankingsAPIResponse) result.Result {
+func (c *Client) FetchRankings(ctx context.Context, q sync.RankingsQuery) ([]result.Result, error) {
+	rankings, err := c.GetRankings(ctx, RankingsRequest{
+		Year:        q.Year,
+		Equipped:    q.Equipped,
+		BenchOnly:   q.BenchOnly,
+		Gender:      q.Gender,
+		AgeCategory: q.AgeCategory,
+		WeightClass: q.WeightClass,
+	})
+	if err != nil {
+		return nil, err
+	}
+	results := make([]result.Result, len(rankings))
+	for i, r := range rankings {
+		results[i] = mapToResult(r)
+	}
+	return results, nil
+}
+
+func (c *Client) FetchAthleteResults(ctx context.Context, athleteID result.LifterID) ([]result.Result, error) {
+	apiResults, err := c.GetAthleteResults(ctx, int(athleteID))
+	if err != nil {
+		return nil, err
+	}
+	results := make([]result.Result, len(apiResults))
+	for i, r := range apiResults {
+		results[i] = mapToResult(r)
+	}
+	return results, nil
+}
+
+func mapToResult(r ResultAPIResponse) result.Result {
 	return result.Result{
 		LifterID:     result.LifterID(r.AthleteId),
 		MeetID:       result.MeetID(r.MeetId),
