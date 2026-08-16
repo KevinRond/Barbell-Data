@@ -40,7 +40,7 @@ func NewClient(api Api) *Client {
 	return &Client{api: api}
 }
 
-func (c *Client) GetResponseBody(ctx context.Context, endpoint string) (io.ReadCloser, error) {
+func (c *Client) getResponseBody(ctx context.Context, endpoint string) (io.ReadCloser, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.api.baseUrl+endpoint, nil)
 	if err != nil {
 		return nil, fmt.Errorf("building request: %w", err)
@@ -51,22 +51,30 @@ func (c *Client) GetResponseBody(ctx context.Context, endpoint string) (io.ReadC
 		return nil, fmt.Errorf("requesting %s: %w", endpoint, err)
 	}
 
+	if resp.StatusCode != http.StatusOK {
+		resp.Body.Close()
+		return nil, fmt.Errorf("%s returned status %d", endpoint, resp.StatusCode)
+	}
+
 	return resp.Body, nil
 }
 
-func (c *Client) GetAthleteResults(ctx context.Context, athleteId int) ([]ResultAPIResponse, error) {
-	body, err := c.GetResponseBody(ctx, c.api.athletesEndpoint+fmt.Sprintf("/%d/results", athleteId))
+func fetchJSON[T any](ctx context.Context, c *Client, endpoint string) (T, error) {
+	var out T
+	body, err := c.getResponseBody(ctx, endpoint)
 	if err != nil {
-		return nil, err
+		return out, err
 	}
 	defer body.Close()
-
-	var athleteResults []ResultAPIResponse
-	if err := json.NewDecoder(body).Decode(&athleteResults); err != nil {
-		return nil, fmt.Errorf("decoding athlete results: %w", err)
+	if err := json.NewDecoder(body).Decode(&out); err != nil {
+		return out, fmt.Errorf("decoding %s: %w", endpoint, err)
 	}
+	return out, nil
+}
 
-	return athleteResults, nil
+func (c *Client) GetAthleteResults(ctx context.Context, athleteId int) ([]ResultAPIResponse, error) {
+	endpoint := c.api.athletesEndpoint + fmt.Sprintf("/%d/results", athleteId)
+	return fetchJSON[[]ResultAPIResponse](ctx, c, endpoint)
 }
 
 func (c *Client) GetRankings(ctx context.Context, req RankingsRequest) ([]RankingsAPIResponse, error) {
@@ -93,19 +101,7 @@ func (c *Client) GetRankings(ctx context.Context, req RankingsRequest) ([]Rankin
 	params.Add("wc", req.WeightClass) // Safely escapes the "-" character
 
 	endpoint := c.api.rankingsEndpoint + "?" + params.Encode()
-
-	body, err := c.GetResponseBody(ctx, endpoint)
-	if err != nil {
-		return nil, err
-	}
-	defer body.Close()
-
-	var rankings []RankingsAPIResponse
-	if err := json.NewDecoder(body).Decode(&rankings); err != nil {
-		return nil, fmt.Errorf("decoding rankings: %w", err)
-	}
-
-	return rankings, nil
+	return fetchJSON[[]RankingsAPIResponse](ctx, c, endpoint)
 }
 
 // defaultLatestQuery is a placeholder for what "latest results" means until

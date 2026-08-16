@@ -1,16 +1,11 @@
 package result
 
-// LifterID identifies an athlete in FQD's system.
 type LifterID int
 
-// MeetID identifies a competition in FQD's system.
 type MeetID int
 
-// WeightClass is a competition weight class, e.g. "-83kg".
 type WeightClass string
 
-// LiftType identifies which of the three competition lifts a ranking or
-// progression query is for.
 type LiftType string
 
 const (
@@ -19,8 +14,6 @@ const (
 	Deadlift LiftType = "deadlift"
 )
 
-// Result is a lifter's full performance at a single meet: the domain
-// entity persisted by Repository and read back via ByLifter.
 type Result struct {
 	LifterID    LifterID
 	MeetID      MeetID
