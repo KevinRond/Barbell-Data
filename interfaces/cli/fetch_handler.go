@@ -52,7 +52,6 @@ func (h *FetchHandler) Run() {
 
 		switch choice {
 		case 1:
-			h.HandleFetchLatestRankings()
 			year, err := promptString(reader, "Enter Year or \"all\" for all time rankings: ")
 			if err != nil {
 				fmt.Println("Error reading year:", err)
@@ -105,6 +104,9 @@ func (h *FetchHandler) Run() {
 			if err != nil {
 				fmt.Println("Error reading weight class:", err)
 				return
+			}
+			if weightClass == "All weight classes" {
+				weightClass = "all"
 			}
 
 			var query = sync.RankingsQuery{
